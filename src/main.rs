@@ -2,7 +2,7 @@ use ureq;
 use url;
 use anyhow::Result;
 use std::io;
-use scraper::{Html, Selector, element_ref::Text};
+use scraper::{Html, Selector, element_ref::Text, Element};
 
 fn main() {
     println!("What do you want to search?");
@@ -41,9 +41,24 @@ fn scrape(page: &str) {
     let tbody = t.pop().unwrap();
     let tr_select = Selector::parse("tr").expect("");
     let tbody_doc = Html::parse_fragment(tbody.as_str());
-    let tr_vec: Vec<String> = tbody_doc.select(&tr_select)
-        .map(|tr| tr.html().trim().to_string())
+    let td_vec: Vec<String> = tbody_doc.select(&tr_select)
+        .map(|tr| tr.inner_html().trim().to_string())
         .collect();
         
-    println!("{tr_vec:?}");
+    let td_select = Selector::parse("td").unwrap();
+    
+    for tds in td_vec.iter() {
+        let doc = Html::parse_fragment(tds.as_str());
+        let tree = doc.tree;
+        let a = tree.nodes();
+        for data in a {
+            let value = data.value();
+            let elements = value.as_text();
+            if let Some(text) = elements {
+                let txt = text.trim();
+                println!("{txt}");
+            }
+
+        }
+    }
 }
