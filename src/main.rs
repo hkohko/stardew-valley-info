@@ -6,15 +6,18 @@ use select::document::Document;
 use select::predicate::{Name, Attr};
 
 fn main() {
-    println!("What do you want to search?");
-    let mut input = String::new();
-    let stdin = io::stdin();
-    let _ = stdin.read_line(&mut input).expect("");
-    let sanitized_input = sanitize_input(input.as_str());
-    let res = make_request(sanitized_input.as_str());
-    match res {
-        Ok(val) => scrape_select(val.as_str()),
-        Err(e) => println!("{e}"),
+    println!("Stardew Valley Wiki CLI");
+    loop {
+        println!("What do you want to search?");
+        let mut input = String::new();
+        let stdin = io::stdin();
+        let _ = stdin.read_line(&mut input).expect("");
+        let sanitized_input = sanitize_input(input.as_str());
+        let res = make_request(sanitized_input.as_str());
+        match res {
+            Ok(val) => scrape_select(val.as_str(), sanitized_input),
+            Err(e) => println!("{e}\n\nItem doesn't exist/unavailable.\nTry matching the case *exactly.*\n"),
+        }
     }
 }
 fn sanitize_input(input: &str) -> String {
@@ -31,7 +34,9 @@ fn make_request(search_term: &str) -> Result<String> {
     let page_string = get_resp.into_string()?;
     Ok(page_string)
 }
-fn scrape_select(page: &str) {
+fn scrape_select(page: &str, userinput: String) {
+    println!("");
+    println!("Search term: {userinput}");
     let document = Document::from(page);
     let _: Vec<()> = document
         .find(Name("table"))
@@ -58,9 +63,10 @@ fn scrape_select(page: &str) {
                     Some(_) => continue,
                     None => {
                         println!("{}: {}", s.text().trim(), d.text().trim());
-                    }  
+                        }  
+                    }
                 }
-            }
         })
         .collect(); 
+    println!("");
 }
