@@ -16,7 +16,10 @@ fn main() {
         let sanitized_input = sanitize_input(input.as_str());
         let res = make_request(sanitized_input.as_str());
         match res {
-            Ok(val) => scrape_select(val.as_str(), sanitized_input),
+            Ok(val) => {
+                let (page, link) = val;
+                scrape_select(page.as_str(), sanitized_input, link);
+            }
             Err(e) => println!(
                 "{e}\n\nItem doesn't exist/unavailable.\nTry matching the case *exactly.*\n"
             ),
@@ -28,7 +31,7 @@ fn sanitize_input(input: &str) -> String {
     let replace_with_underscore = trim.replace(" ", "_");
     replace_with_underscore
 }
-fn make_request(search_term: &str) -> Result<String> {
+fn make_request(search_term: &str) -> Result<(String, url::Url)> {
     let base_url = "https://stardewvalleywiki.com/";
     let parse_url = url::Url::parse(base_url).expect("Unable to parse url into a url::Url");
     let search_for = parse_url
@@ -37,7 +40,7 @@ fn make_request(search_term: &str) -> Result<String> {
     let agent = ureq::AgentBuilder::new().build();
     let get_resp = agent.get(search_for.as_str()).call()?;
     let page_string = get_resp.into_string()?;
-    Ok(page_string)
+    Ok((page_string, search_for))
 }
 fn display_data<'a>(
     section: Find<'a, Attr<&'a str, &'a str>>,
@@ -66,7 +69,7 @@ fn display_data<'a>(
         println!("{}: {}", s.text().trim(), d.text().trim())
     }
 }
-fn scrape_select(page: &str, userinput: String) {
+fn scrape_select(page: &str, userinput: String, link: url::Url) {
     println!("");
     println!("Search term: {userinput}");
     let document = Document::from(page);
@@ -83,5 +86,5 @@ fn scrape_select(page: &str, userinput: String) {
                 .collect();
         })
         .collect();
-    println!("");
+    println!("\n{}\n", link.as_str());
 }
